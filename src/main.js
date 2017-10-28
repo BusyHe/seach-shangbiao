@@ -3,9 +3,9 @@ import App from './App'
 import router from './router'
 import '@/common/stylus/index.styl'
 import {
-    // Pagination,
+    Pagination,
     // Dialog,
-    // Autocomplete,
+    Autocomplete,
     // Dropdown,
     // DropdownMenu,
     // DropdownItem,
@@ -21,9 +21,9 @@ import {
     // Checkbox,
     // CheckboxGroup,
     // Switch,
-    // Select,
-    // Option,
-    // OptionGroup,
+    Select,
+    Option,
+    OptionGroup,
     Button,
     ButtonGroup,
     Table,
@@ -44,8 +44,8 @@ import {
     Alert,
     // Slider,
     // Icon,
-    // Row,
-    // Col,
+    Row,
+    Col,
     Upload,
     // Progress,
     // Spinner,
@@ -67,9 +67,9 @@ import {
     Notification
 } from 'element-ui'
 
-// Vue.use(Pagination)
+Vue.use(Pagination)
 // Vue.use(Dialog)
-// Vue.use(Autocomplete)
+Vue.use(Autocomplete)
 // Vue.use(Dropdown)
 // Vue.use(DropdownMenu)
 // Vue.use(DropdownItem)
@@ -85,9 +85,9 @@ Vue.use(Input)
 // Vue.use(Checkbox)
 // Vue.use(CheckboxGroup)
 // Vue.use(Switch)
-// Vue.use(Select)
-// Vue.use(Option)
-// Vue.use(OptionGroup)
+Vue.use(Select)
+Vue.use(Option)
+Vue.use(OptionGroup)
 Vue.use(Button)
 Vue.use(ButtonGroup)
 Vue.use(Table)
@@ -108,8 +108,8 @@ Vue.use(Popover)
 Vue.use(Alert)
 // Vue.use(Slider)
 // Vue.use(Icon)
-// Vue.use(Row)
-// Vue.use(Col)
+Vue.use(Row)
+Vue.use(Col)
 Vue.use(Upload)
 // Vue.use(Progress)
 // Vue.use(Spinner)

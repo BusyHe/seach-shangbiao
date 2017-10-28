@@ -9,6 +9,7 @@
 import axios from 'axios'
 import qs from 'qs'
 import NProgress from 'nprogress'
+import {Message} from 'element-ui'
 
 // 添加请求拦截器
 axios.interceptors.request.use(function (config) {
@@ -20,6 +21,9 @@ axios.interceptors.request.use(function (config) {
 
 // 添加返回拦截器
 axios.interceptors.response.use(function (res) {
+    if (res.data.status === 1) {
+        Message.warning(res.data.message)
+    }
     NProgress.done();
     return res
 }, function (error) {
