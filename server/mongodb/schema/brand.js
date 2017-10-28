@@ -2,19 +2,23 @@
  * Created by one_brand_info on 2017/10/28.
  * Email: 525118368@qq.com
  */
-var mongoose = require('mongoose');
-var Schema = mongoose.Schema;
+const mongoose = require('mongoose');
+const Schema = mongoose.Schema;
 
-var brandSchema = new Schema({
+let brandSchema = new Schema({
     query: String,
     searchData: {
-        id: '',
+        id: String,
         img: String,
         name: String,
+        regis: String,
+        nettype: String,
         proposer: String,
         status: String
     },
-    date: {
+    total: Number,
+    pages: Number,
+    time: {
         type: Date,
         default: Date.now
     }
