@@ -9,7 +9,8 @@ const path = require('path');
 const cheerio = require('cheerio');
 const Brand = require('../api/brandInfo');
 const BrandBrandModelModel = require('../mongodb/schema/brand').brands;
-let task = require('../common/task');
+const QueryModel = require('../mongodb/schema/query').querys;
+const sequence = require('../common/sequence');
 
 let upload = (req, res) => {
     let fileContent = '';
@@ -28,137 +29,129 @@ let upload = (req, res) => {
         contentList = fileContent.split('\n')
         switch (fields.action[0]) {
             case 'main_file':
-                if (task.isLock) {
-                    return status.err(res, '有进行中的任务，等待任务完成再上传')
-                }
-                task = {
-                    name: originFilename,
-                    status: 'CONTINUE',
-                    total: contentList.length,
-                    successNum: 0,
-                    errNum: 0,
-                    isLock: true
-                };
                 getInfo(contentList);
                 return res.json({
                     status: 0,
-                    data: task
+                    data: {
+                        name: originFilename,
+                        total: contentList.length
+                    }
                 })
         }
     })
 };
 
 function getInfo(list) {
-    // 全部请求得到数据保存到mongo
-    Promise.all(list.map((item, index) => getBrandData(item, index))).then(allData => {
-        task.isLock = false;
-        task.status = 'SUCCESS'
-    }).catch(err => {
-        console.log(err);
-        task.isLock = false;
-        task.status = 'ERR'
-    })
-}
-
-function getBrandData(item, index) {
-    return new Promise((resolve, reject) => {
-        setTimeout(function () {
-            Brand.getBrand(item, 9, 1).then(data => {
-                task.successNum = task.successNum + 1;
-                let tolsall, total, pages;
-                let $ = cheerio.load(data);
-                let noData = $('#NoDatas').text();
-                if (!noData) {
-                    tolsall = $('#pages').find('a[name=tolsall]').text();
-                    total = tolsall.replace(/\S(\d*)\S/g, '$1'); // 获取总数
-                    pages = Math.ceil(total / 24); // 获取总页数
-                } else {
-                    total = 0;
-                    pages = 0
-                }
-                getOneData({total, pages, name: item, delay: index * 600}).then(() => {
-                    resolve()
+    let steps = [];
+    list.forEach((item, index) => {
+        steps.push(() => {
+            return new Promise(resolve => {
+                Brand.getBrand(item, 9, 1).then(data => {
+                    let tolsall, total, pages;
+                    let $ = cheerio.load(data);
+                    let noData = $('#NoDatas').text();
+                    if (!noData) {
+                        tolsall = $('#pages').find('a[name=tolsall]').text();
+                        total = tolsall.replace(/\S(\d*)\S/g, '$1'); // 获取总数
+                        pages = Math.ceil(total / 24); // 获取总页数
+                    } else {
+                        total = 0;
+                        pages = 0
+                    }
+                    let queryData = {
+                        query: item,
+                        total: total,
+                        pages: pages
+                    };
+                    let queryEntity = new QueryModel(queryData);
+                    queryEntity.save(function (err, result) {
+                        if (err) {
+                            console.log(err)
+                        }
+                    });
+                    console.log(index + '||' + item + '||' + total + '||' + pages);
+                    setTimeout(() => {
+                        resolve(queryData);
+                    }, 500);
                 }).catch(err => {
-                    reject(err)
+                    console.log(err);
+                    setTimeout(() => {
+                        resolve({
+                            query: item,
+                            total: 0,
+                            pages: 0,
+                            err: true
+                        });
+                    }, 500);
+                })
+            })
+        })
+    });
+    sequence(steps).then(datas => {
+        let infoSteps = [];
+        datas.forEach(item => {
+            if (item.pages === 0) {
+                let brandEntity = new BrandBrandModelModel({
+                    query: item.query,
+                    total: item.total,
+                    pages: item.pages
                 });
-            }).catch(err => {
-                task.errNum = task.errNum + 1;
-                reject(err)
-            })
-        }, index * 1000)
-    })
-}
-
-function getOneData(data) {
-    return new Promise((resolve, reject) => {
-        if (data.total === 0) {
-            let brandEntity = new BrandBrandModelModel({
-                name: data.name,
-                total: data.total,
-                pages: data.pages
-            });
-            brandEntity.save(function (err, result) {
-                if (err) {
-                    console.log(err)
-                }
-            });
-            resolve()
-        } else {
-            console.log(data)
-            let oneBrandInfoList = [];
-            for (var i = 0; i < data.pages; i++) {
-                oneBrandInfoList.push(new Promise((resolve, reject) => {
-                    setTimeout(function () {
-                        Brand.getBrandInfo(data.name, 9, 1, i + 1).then(htmlDom => {
-                            console.log('name:' + data.name + '// page:' + (i + 1));
-                            filterHtml(data, htmlDom);
-                            resolve()
-                        }).catch(err => {
-                            console.log(err);
-                            reject(err)
+                brandEntity.save(function (err, result) {
+                    if (err) {
+                        console.log(err)
+                    }
+                });
+            } else {
+                for (var i = 0; i < item.pages; i++) {
+                    let pageNum = i + 1;
+                    infoSteps.push(() => {
+                        return new Promise(resolve => {
+                            Brand.getBrandInfo(item.query, 9, 1, pageNum).then(htmlDom => {
+                                console.log(item.query + ' || ' + pageNum + '/' + item.pages + '||' + item.total);
+                                filterHtml(item, htmlDom);
+                                setTimeout(() => {
+                                    resolve();
+                                }, 500)
+                            }).catch(err => {
+                                console.log(err);
+                                setTimeout(() => {
+                                    resolve();
+                                }, 500)
+                            })
                         })
-                    }, data.delay + (i * 1000))
-                }))
+                    })
+                }
             }
-            Promise.all(oneBrandInfoList).then(() => {
-                resolve()
-            }).catch(err => {
-                console.log(err);
-                reject(err)
-            })
-        }
+        });
+        sequence(infoSteps)
     })
-
 }
 
 // 获取一页数据的列表
 function filterHtml(data, htmlData) {
-    return new Promise((resolve, reject) => {
-        let $ = cheerio.load(htmlData);
-        $('.TMinfoList').each((i, e) => {
-            let newItem = {
-                id: $(e).parent().attr('href').replace(/[^=]+=(\d*)&[^*]+/g, '$1'),
-                img: 'http://www.shangdun.org' + $(e).find('.img-responsive').attr('src'),
-                name: $(e).find('.TMnm').text(),
-                regis: $(e).find('.TMreg').text().replace(/(\d*)[^*]+/g, '$1'),
-                nettype: $(e).find('.TMreg').text().replace(/[\d*][^（]+（(\d)\S）/g, '$1'),
-                proposer: $(e).find('.TMagent').text(),
-                status: $(e).find('.TMst').text()
-            };
-            let brandEntity = new BrandBrandModelModel({
-                name: data.name,
-                total: data.total,
-                pages: data.pages,
-                searchData: newItem
-            });
-            brandEntity.save(function (err, result) {
-                if (err) {
-                    console.log(err)
-                }
-            });
+    let $ = cheerio.load(htmlData);
+    $('.TMinfoList').each((i, e) => {
+        let newItem = {
+            id: $(e).parent().attr('href').replace(/[^=]+=(\d*)&[^*]+/g, '$1'),
+            img: 'http://www.shangdun.org' + $(e).find('.img-responsive').attr('src'),
+            name: $(e).find('.TMnm').text(),
+            regis: $(e).find('.TMreg').text().replace(/(\d*)[^*]+/g, '$1'),
+            nettype: $(e).find('.TMreg').text().replace(/[\d*][^（]+（(\d)\S）/g, '$1'),
+            proposer: $(e).find('.TMagent').text(),
+            status: $(e).find('.TMst').text()
+        };
+        let brandEntity = new BrandBrandModelModel({
+            query: data.query,
+            total: data.total,
+            pages: data.pages,
+            searchData: newItem
         });
-        resolve()
-    })
+        brandEntity.save(function (err, result) {
+            if (err) {
+                console.log(err)
+            }
+        });
+    });
 }
 
 module.exports = upload;
