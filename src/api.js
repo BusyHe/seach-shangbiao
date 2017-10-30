@@ -39,6 +39,19 @@ export const uploadFile = () => {
     })).then(res => res.data)
 };
 
-export const getBrandInfo = () => {
-    return axios.post(baseUrl, qs.stringify({})).then(res => res.data)
+/**
+ * 搜索
+ * @param localWord query
+ * @param netWord 查询后的词
+ * @param netType 类型
+ * @param proposer 申请人
+ * @param page 页数
+ * @returns {Promise.<TResult>}
+ */
+export const searchQury = ({localWord, netWord, netType, proposer, page}) => {
+    return axios.post(baseUrl + '/search', qs.stringify({action: 'search_query', localWord, netWord, netType, proposer, page})).then(res => res.data)
+};
+
+export const searchSug = ({localWord, netWord, netType, proposer, sort}) => {
+    return axios.post(baseUrl + '/search', qs.stringify({action: 'search_sug', localWord, netWord, netType, proposer, sort})).then(res => res.data)
 };

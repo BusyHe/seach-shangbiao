@@ -17,11 +17,13 @@
             </el-upload>
             <div class="search-box">
                 <div class="search-item">
-                    <label>本地词</label>
+                    <label>query</label>
                     <el-autocomplete
                         v-model="search.localWord"
                         :fetch-suggestions="querySearchAsync"
+                        @click.native="setFocusKey('query')"
                         placeholder="请输入内容"
+                        @keyup.enter.native="enterEvent"
                         @select="handleSelect"
                     ></el-autocomplete>
                 </div>
@@ -30,13 +32,15 @@
                     <el-autocomplete
                         v-model="search.netWord"
                         :fetch-suggestions="querySearchAsync"
+                        @click.native="setFocusKey('searchData.name')"
                         placeholder="请输入内容"
+                        @keyup.enter.native="enterEvent"
                         @select="handleSelect"
                     ></el-autocomplete>
                 </div>
                 <div class="search-item">
                     <label>国际类别</label>
-                    <el-select v-model="search.netType" placeholder="请选择" class="net-type-select">
+                    <el-select v-model="search.netType" placeholder="请选择" class="net-type-select" disabled>
                         <el-option
                             v-for="item in netTypeOptions"
                             :key="item.value"
@@ -50,7 +54,9 @@
                     <el-autocomplete
                         v-model="search.proposer"
                         :fetch-suggestions="querySearchAsync"
+                        @click.native="setFocusKey('searchData.proposer')"
                         placeholder="请输入内容"
+                        @keyup.enter.native="enterEvent"
                         @select="handleSelect"
                     ></el-autocomplete>
                 </div>
@@ -61,9 +67,9 @@
         </div>
         <el-pagination
             class="pagination"
-            @current-change="handleCurrentChange"
+            @current-change="_searchQury"
             :current-page.sync="currentPage"
-            :page-size="100"
+            :page-size="50"
             layout="prev, pager, next, jumper"
             :total="total">
         </el-pagination>
@@ -71,11 +77,13 @@
 </template>
 <script>
     import BrandGroup from 'comps/brand-group/brand-group'
+    import {searchQury, searchSug} from '@/api'
 
     export default {
         name: 'home',
         data() {
             return {
+                sortKey: '',
                 fullscreenLoading: false,
                 uploadData: {
                     action: 'main_file'
@@ -94,29 +102,51 @@
                 ],
                 brandData: [],
                 total: 0,
-                currentPage: 0
+                currentPage: 1
             }
         },
         props: [''],
         components: {BrandGroup},
         created() {
+            this._searchQury()
         },
         mounted() {
         },
         methods: {
+            enterEvent() {
+                this.currentPage = 1;
+                this._searchQury()
+            },
+            setFocusKey(sort) {
+                this.sortKey = sort
+            },
+            _searchQury() {
+                let queryParams = Object.assign({}, this.search);
+                queryParams.page = this.currentPage;
+                searchQury(queryParams).then(res => {
+                    if (res.status === 0) {
+                        this.brandData = res.data;
+                        this.total = res.total
+                    }
+                })
+            },
             querySearchAsync(queryString, cb) {
+                setTimeout(() => {
+                    let queryParams = Object.assign({}, this.search, {sort: this.sortKey});
+                    searchSug(queryParams).then(res => {
+                        cb(res.list)
+                    })
+                }, 50);
             },
             handleSelect(item) {
-                console.log(item);
+                this.currentPage = 1;
+                this._searchQury()
             },
             beforUploadEvent() {
                 this.fullscreenLoading = true
             },
             handlePreview(data) {
-                console.log(data);
                 this.fullscreenLoading = false
-            },
-            handleCurrentChange() {
             },
             _search() {
             }
@@ -127,6 +157,7 @@
     @import "~common/stylus/variable"
     .home
         &-menu
+            position relative
             box-sizing border-box
             width 100%
             height 60px
@@ -134,6 +165,7 @@
             line-height 60px
             background-color white
             box-shadow 0 2px 2px rgba(0, 0, 0, .12)
+            z-index 10
             .upload-button-t
                 height 36px
                 line-height 36px
@@ -159,16 +191,15 @@
             position absolute
             top 60px
             right 0
-            bottom 0
+            bottom 60px
             left 0
             padding 15px
-            .grid-content
-                background-color white
-                height 300px
-                box-shadow 0 2px 2px rgba(0, 0, 0, .12)
+            overflow hidden
+            overflow-y scroll
         .pagination
             position absolute
             left 15px
             bottom 15px
+            padding 0
 
 </style>
