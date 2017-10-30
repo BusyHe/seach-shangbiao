@@ -3,9 +3,12 @@
  * Email: 525118368@qq.com
  */
 const info = (req, res) => {
-    return res.json({
-        status: 0
-    })
+    switch (req.body.action) {
+        case 'search_query':
+            return res.json({
+                status: 0
+            });
+    }
 };
 
 module.exports = info;
