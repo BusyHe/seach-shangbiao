@@ -55,3 +55,7 @@ export const searchQury = ({localWord, netWord, netType, proposer, page}) => {
 export const searchSug = ({localWord, netWord, netType, proposer, sort}) => {
     return axios.post(baseUrl + '/search', qs.stringify({action: 'search_sug', localWord, netWord, netType, proposer, sort})).then(res => res.data)
 };
+
+// export const getDetail = ({localWord, netWord, netType, proposer, sort}) => {
+//     return axios.post(baseUrl + '/search', qs.stringify({action: 'search_sug', localWord, netWord, netType, proposer, sort})).then(res => res.data)
+// };

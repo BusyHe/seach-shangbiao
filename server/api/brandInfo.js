@@ -24,6 +24,12 @@ const brandInfo = {
             Wz: '',
             SRty: 1
         })
+    },
+    getBrandDetail(id, type) {
+        return http.get('http://www.shangdun.org/Search/', {
+            id: id,
+            c: type
+        })
     }
 };
 

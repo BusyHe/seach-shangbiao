@@ -5,7 +5,7 @@
 <template>
     <el-row :gutter="10">
         <el-col :xs="12" :sm="8" :md="6" :lg="4" v-for="(item,index) in data" :key="index">
-            <div class="grid-content bg-purple">
+            <div class="grid-content bg-purple" @click="getBrandInfo(item.searchData.id, item.searchData.nettype)">
                 <div class="img-box">
                     <img :src="item.searchData.img"/>
                 </div>
@@ -30,7 +30,11 @@
         },
         mounted() {
         },
-        methods: {}
+        methods: {
+            getBrandInfo(id, type) {
+                console.log(`http://www.shangdun.org/Show/?id=${id}&C=${type}`)
+            }
+        }
     }
 </script>
 <style lang="stylus" rel="stylesheet/stylus" type="text/stylus" scoped>
@@ -41,6 +45,7 @@
         box-shadow 0 2px 2px rgba(0, 0, 0, .12)
         transition: box-shadow 0.3s ease-in-out
         margin-bottom 10px
+        padding-bottom 5px
         cursor pointer
         &:hover
             box-shadow 0 5px 15px rgba(0, 0, 0, .3)
@@ -57,15 +62,16 @@
                 margin-left: auto;
                 vertical-align middle
         h3
-            margin 10px 0
+            margin 10px 0 20px 0
             padding 0 10px
             font-size $font-size-medium-x
             text-ellipsis()
         p
             padding 0 10px
             line-height 12px
-            font-size $font-size-medium
+            font-size $font-size-small
             color $color-text-l
+            margin 5px 0
             text-ellipsis()
 
 </style>
