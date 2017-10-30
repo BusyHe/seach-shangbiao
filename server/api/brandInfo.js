@@ -4,17 +4,6 @@
  */
 const http = require('../util/http');
 
-module.exports = function getBrandInfo(value, type, brandType, page) {
-    return http.get('http://www.shangdun.org/Search/', {
-        ST: brandType, // 1中文商标，2英文商标，3拼音商标
-        qzhs: type, // 商标群组
-        W: value, // 查询文字
-        WT: value, // 查询文字
-        PG: page, // 页数
-        SRty: 1,
-        G: `0${type}`
-    })
-}
 const brandInfo = {
     getBrandInfo(value, type, brandType, page) {
         return http.get('http://www.shangdun.org/Search/', {
@@ -36,5 +25,6 @@ const brandInfo = {
             SRty: 1
         })
     }
-}
-module.exports = brandInfo
+};
+
+module.exports = brandInfo;
